@@ -11,77 +11,182 @@ class treeNode:
                 self.childNodes = children
                 self.val = value
                 
-def Entropy(row):
-        distinct_class = set(row)
-        entropy = 0
-        net = len(row)
-        for cl in distinct_class:
-                frac = (row.count(cl)/net)
-                entropy -= frac * (math.log(frac)/math.log(2.0))
-        return entropy
+        def Entropy(self, row):
+                distinct_class = set(row)
+                entropy = 0
+                net = len(row)
+                for cl in distinct_class:
+                        frac = (row.count(cl)/net)
+                        entropy -= frac * (math.log(frac)/math.log(2.0))
+                return entropy
 
 
-def informationGain(res, attrib):
-        attrib_class = set(attrib)
-        classDict = {}
-        for i in attrib_class:
-                classDict[i] = []
-        for j in range(len(attrib)):
-                classDict[attrib[j]].append(res[j])
-        entSum = 0
+        def informationGain(self, res, attrib):
+                attrib_class = set(attrib)
+                classDict = {}
+                for i in attrib_class:
+                        classDict[i] = []
+                for j in range(len(attrib)):
+                        classDict[attrib[j]].append(res[j])
+                entSum = 0
 
-        for i in attrib_class:
+                for i in attrib_class:
 
-                entSum += (len(classDict[i])/len(res)) * Entropy(classDict[i])
-        return Entropy(res) - entSum
-def getCols(dataSet):
-        colLen = len(dataSet[0])
-        cols = []
-        for i in range(colLen):
-                col = []
-                for j in dataSet:
+                        entSum += (len(classDict[i])/len(res)) * self.Entropy(classDict[i])
+                return self.Entropy(res) - entSum
+        
+        def getCols(self, dataSet):
+                colLen = len(dataSet[0])
+                cols = []
+                for i in range(colLen):
+                        col = []
+                        for j in dataSet:
                         
-                        col.append(j[i])
-                col.pop(0)
-                cols.append(col)       
-        return cols
+                                col.append(j[i])
+                        col.pop(0)
+                        cols.append(col)       
+                return cols
                 
-def Split(attribNumber, attribCol, dataSet, header):
-        attrib_class = set(attribCol)
-        newData = []
-        for i in attrib_class:
-                splitPart = []
-                newHeader = copy.copy(header)
-                newHeader.pop(attribNumber)
-                splitPart.append(newHeader)
-                for j in range(1, len(dataSet)):
+        def Split(self, attribNumber, attribCol, dataSet, header):
+                attrib_class = set(attribCol)
+                newData = []
+                for i in attrib_class:
+                        splitPart = []
+                        newHeader = copy.copy(header)
+                        newHeader.pop(attribNumber)
+                        splitPart.append(newHeader)
+                        for j in range(1, len(dataSet)):
 
-                        if(dataSet[j][attribNumber] == i):
-                                temp = copy.copy(dataSet[j])
-                                temp.pop(attribNumber)
-                                splitPart.append(temp)
+                                if(dataSet[j][attribNumber] == i):
+                                        temp = copy.copy(dataSet[j])
+                                        temp.pop(attribNumber)
+                                        splitPart.append(temp)
                                 
-                newData.append(splitPart)
+                        newData.append(splitPart)
 
-        return dataSet[0][attribNumber], newData
-        
+                return dataSet[0][attribNumber], newData
 
+        def buildLayer(self, train, remCols, curHeader):
+                columns = self.getCols(train)
+                infoGain = []
+                corCol = []
+                if(len(train) == 3 and train[1][0] == train[2][0]):
+                        train[1][1] = train[2][1]
+                for i in range(len(columns)-1):
 
-trainDataSet = [['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'A11', 'A12', 'A13', 'A14', 'A15', 'class']]
-TrainFile = open('train.txt', 'r')
-for line in TrainFile:
-        inputLine = line.strip().split('\t')
-        for x in range(len(inputLine)):
-                if inputLine[x].isdigit() or '.' in inputLine[x]:
+                        if(type(columns[i][0]) == int or type(columns[i][0]) == float or columns[i][0] =='?'):
+                                infoGain.append(-1990)
+                                corCol.append(i)
+                        #elif(type(columns[i][0]) == tuple):
+                         #       infoGain.append(1.6)
+                          #      corCol.append(i)
+                        else:
+
+                                infoGain.append(self.informationGain(columns[len(columns)-1], columns[i]))
+                                corCol.append(i)
+
+                maxGain = max(infoGain)
+
                 
-                        inputLine[x] = eval(inputLine[x])
-        trainDataSet.append(inputLine)
+                index = infoGain.index(maxGain)
+                colIndex = corCol[index]
+
+                attribNumber, newData = self.Split(colIndex, columns[colIndex], train, curHeader)
+                return list(set(columns[colIndex])), attribNumber, newData
+        
+        def buildTree(self, trainDataSet, cur):
+                decisionTree = {}
+                res = ['+','-']
+                ind = random.randint(0,1)
+                tree = treeNode(0, attribs=None, children={}, value=res[0], cur=cur)
+                if(len(trainDataSet) == 1):
+                        return tree
+                if(len(trainDataSet[0]) == 1):
+                        return tree
+                childCols, attribNumber, newData = self.buildLayer(trainDataSet, [], trainDataSet[0])
+                tree = treeNode(attribNumber, attribs=childCols, children={}, value=None, cur=cur)
+                for i in childCols:
+                        if i not in decisionTree:
+                                decisionTree[i] = {}
+                        if i not in tree.childNodes:
+                                tree.childNodes[i] = {}
+                count = 0
+
+                for i in range(len(newData)):
+
+                        cols = self.getCols(newData[i])
+
+                        if(len(set(cols[len(cols)-1])) == 1):
+                                
+
+                                childNode = treeNode(attribNumber, value=cols[len(cols)-1][0], cur=childCols[i])
+                                tree.childNodes[childCols[i]] = childNode
+                        else:
+                                
+
+                        
+                                tree.childNodes[childCols[i]] = self.buildTree(newData[i], childCols[i])
+
+                        count = count + 1
+        
+
+                return tree
+        def buildTreeDepth(self, trainDataSet, cur, maxDepth, curDepth):
+                decisionTree = {}
+                res = ['+','-']
+                ind = random.randint(0,1)
+                tree = treeNode(0, attribs=None, children={}, value=res[0], cur=cur)
+                if(len(trainDataSet) == 1):
+                        return tree
+                childCols, attribNumber, newData = self.buildLayer(trainDataSet, [], trainDataSet[0])
+        
+        
+                tree = treeNode(attribNumber, attribs=childCols, children={}, value=None, cur=cur)
+                for i in childCols:
+                        if i not in decisionTree:
+                                decisionTree[i] = {}
+                        if i not in tree.childNodes:
+                                tree.childNodes[i] = {}
+                count = 0
+                if(curDepth == maxDepth):
+                        for i in range(len(newData)):
+                                cols = self.getCols(newData[i])
+                                try:
+                                        output = mode(cols[len(cols)-1])
+                                except:
+                                        output = res[0]
+                                childNode = treeNode(attribNumber, value = output, cur=childCols[i])
+                                tree.childNodes[childCols[i]] = childNode
+                        return tree
+                        
+                for i in range(len(newData)):
+
+                        cols = self.getCols(newData[i])
+
+                        if(len(set(cols[len(cols)-1])) == 1):
+                                
+
+                                childNode = treeNode(attribNumber, value=cols[len(cols)-1][0], cur=childCols[i])
+                                tree.childNodes[childCols[i]] = childNode
+                        else:
+                                
+
+                        
+                                tree.childNodes[childCols[i]] = self.buildTreeDepth(newData[i], childCols[i], maxDepth, curDepth+1)
+
+                        count = count + 1
+        
+
+                return tree
+
         
 
 
-def preProcessing(trainDataSet):
 
         
+
+
+def preProcessing(trainDataSet,columns):
         for i in range(len(trainDataSet)):
                 for j in range(len(trainDataSet[i])):
                         if(trainDataSet[i][j] == '?'):
@@ -102,9 +207,7 @@ def preProcessing(trainDataSet):
 
         return trainDataSet
 
-attribCol = []
-columns = getCols(trainDataSet)
-trainDataSet = preProcessing(trainDataSet)
+
 
 def numToCat(trainDataSet, columns):
         resClass = columns[len(columns)-1]
@@ -132,9 +235,9 @@ def numToCat(trainDataSet, columns):
                         cats = []
                         curLabel = sortedpairs[0][1]
                         cats.append(sortedpairs[0][0])
-                        for k in range(1,len(sortedpairs)-8):
+                        for k in range(1,len(sortedpairs)-2):
                                 if(sortedpairs[k][1] !=curLabel):
-                                        cats.append(sortedpairs[k+8][0])
+                                        cats.append(sortedpairs[k+2][0])
                                         curLabel = sortedpairs[k][1]
                         cur = 0.0
 
@@ -157,77 +260,6 @@ def numToCat(trainDataSet, columns):
                                 trainDataSet[i][j] = (categorical[j][k-1], categorical[j][k])
         return trainDataSet, categorical
 
-trainDataSet, categories = numToCat(trainDataSet, columns)
-columns = getCols(trainDataSet)
-
-
-def buildLayer(train, remCols, curHeader):
-        columns = getCols(train)
-        infoGain = []
-        corCol = []
-        if(len(train) == 3 and train[1][0] == train[2][0]):
-                train[1][1] = train[2][1]
-        for i in range(len(columns)-1):
-
-                if(type(columns[i][0]) == int or type(columns[i][0]) == float or columns[i][0] =='?'):
-                        infoGain.append(-1990)
-                        corCol.append(i)
-                elif(type(columns[i][0]) == tuple):
-                        infoGain.append(1.6)
-                        corCol.append(i)
-                else:
-
-                        infoGain.append(informationGain(columns[len(columns)-1], columns[i]))
-                        corCol.append(i)
-
-        maxGain = max(infoGain)
-
-                
-        index = infoGain.index(maxGain)
-        colIndex = corCol[index]
-
-        attribNumber, newData = Split(colIndex, columns[colIndex], train, curHeader)
-        return list(set(columns[colIndex])), attribNumber, newData
-
-
-def buildTree(trainDataSet, cur):
-        decisionTree = {}
-        res = ['+','-']
-        ind = random.randint(0,1)
-        tree = treeNode(0, attribs=None, children={}, value=res[0], cur=cur)
-        if(len(trainDataSet) == 1):
-                return tree
-        if(len(trainDataSet[0]) == 1):
-                return tree
-        childCols, attribNumber, newData = buildLayer(trainDataSet, [], trainDataSet[0])
-        tree = treeNode(attribNumber, attribs=childCols, children={}, value=None, cur=cur)
-        for i in childCols:
-                if i not in decisionTree:
-                        decisionTree[i] = {}
-                if i not in tree.childNodes:
-                        tree.childNodes[i] = {}
-        count = 0
-
-        for i in range(len(newData)):
-
-                cols = getCols(newData[i])
-
-                if(len(set(cols[len(cols)-1])) == 1):
-                                
-
-                        childNode = treeNode(attribNumber, value=cols[len(cols)-1][0], cur=childCols[i])
-                        tree.childNodes[childCols[i]] = childNode
-                else:
-                                
-
-                        
-                        tree.childNodes[childCols[i]] = buildTree(newData[i], childCols[i])
-
-                count = count + 1
-        
-
-        return tree
-tree = buildTree(trainDataSet, 'root')
 
 
 def printTreeRecurse(tree, indent):
@@ -241,73 +273,39 @@ def printTreeRecurse(tree, indent):
                 for i in tree.attributes:
                         printTreeRecurse(tree.childNodes[i], indent+1)
 
-def buildTreeDepth(trainDataSet, cur, maxDepth, curDepth):
-        decisionTree = {}
-        res = ['+','-']
-        ind = random.randint(0,1)
-        tree = treeNode(0, attribs=None, children={}, value=res[0], cur=cur)
-        if(len(trainDataSet) == 1):
-                return tree
-        childCols, attribNumber, newData = buildLayer(trainDataSet, [], trainDataSet[0])
-        
-        
-        tree = treeNode(attribNumber, attribs=childCols, children={}, value=None, cur=cur)
-        for i in childCols:
-                if i not in decisionTree:
-                        decisionTree[i] = {}
-                if i not in tree.childNodes:
-                        tree.childNodes[i] = {}
-        count = 0
-        if(curDepth == maxDepth):
-                for i in range(len(newData)):
-                        cols = getCols(newData[i])
-                        try:
-                                output = mode(cols[len(cols)-1])
-                        except:
-                                output = res[0]
-                        childNode = treeNode(attribNumber, value = output, cur=childCols[i])
-                        tree.childNodes[childCols[i]] = childNode
-                return tree
-                        
-        for i in range(len(newData)):
+def Vote(iterTree):
+        if(iterTree.val !=None):
+                return iterTree.val
+        outs = []
+        for i in iterTree.attributes:
+                outs.append(Vote(iterTree.childNodes[i]))
+        try:
+                response = mode(outs)
+        except:
+                response = '+'
+        return response
+                
 
-                cols = getCols(newData[i])
-
-                if(len(set(cols[len(cols)-1])) == 1):
-                                
-
-                        childNode = treeNode(attribNumber, value=cols[len(cols)-1][0], cur=childCols[i])
-                        tree.childNodes[childCols[i]] = childNode
-                else:
-                                
-
-                        
-                        tree.childNodes[childCols[i]] = buildTreeDepth(newData[i], childCols[i], maxDepth, curDepth+1)
-
-                count = count + 1
-        
-
-        return tree
-tree2 = buildTreeDepth(trainDataSet, 'root', 7,1)
 def getNextNode(testRow, curRow, iterTree, iterTreevals):
         nextNodes = iterTree.attributes
         childNode = treeNode(iterTree.attribNumber, value=iterTreevals[curRow-1])
+        
         for i in nextNodes:
                 tempTree = copy.copy(iterTree)
                 tempTree = tempTree.childNodes[i]
                 curCol = int(iterTree.attribNumber[1:])-1
                 
-                if(tempTree.val!=None or testRow[curCol] in tempTree.attributes):
+                if(tempTree.val!=None):
                         childNode.attribNumber = tempTree.attribNumber
                         childNode.attributes = tempTree.attributes
                         childNode.cur = tempTree.cur
                         return childNode
+                else:
+                        responses = Vote(iterTree)
+                        childNode.val = responses
         return childNode
-                
-                
-                
 
-def DecisionTree():
+def DecisionTree(maxDepth):
 	#TODO: Your code starts from here. 
         #      This function should return a list of labels.
 	#      e.g.: 
@@ -318,12 +316,31 @@ def DecisionTree():
 	#		labels[1] = prediected_training_labels
 	#		labels[2] = original_testing_labels
 	#		labels[3] = predicted_testing_labels
-	labels = []
-	cols_train = getCols(trainDataSet)
-	
-	labels.append(cols_train[15])
 	newvals = []
+	mainObj = treeNode(0)
+	trainDataSet = [['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'A11', 'A12', 'A13', 'A14', 'A15', 'class']]
+	TrainFile = open('train.txt', 'r')
+	for line in TrainFile:
+                inputLine = line.strip().split('\t')
+                for x in range(len(inputLine)):
+                        if inputLine[x].isdigit() or '.' in inputLine[x]:
+                                inputLine[x] = eval(inputLine[x])
+                trainDataSet.append(inputLine)
+                                
+	
+	columns = mainObj.getCols(trainDataSet)
+	trainDataSet = preProcessing(trainDataSet, columns)
+	trainDataSet, categories = numToCat(trainDataSet, columns)
+
+	labels = []
+	cols_train = mainObj.getCols(trainDataSet)
+	#print(maxDepth)
+	tree2 = mainObj.buildTreeDepth(trainDataSet, 'root', maxDepth,1)
+	#printTreeRecurse(tree2, 0)
+	labels.append(cols_train[15])
+	
 	F1_train = 0
+	
 	for i in range(1, len(trainDataSet)):
                 iterTree = copy.copy(tree2)
                 curRow = trainDataSet[i]
@@ -341,7 +358,7 @@ def DecisionTree():
                 newvals.append(curTreeVal)
                 if(curTreeVal == trainDataSet[i][len(trainDataSet[i])-1]):
                         F1_train +=1
-
+        
 	F1_test = 0
 	testDataSet = [['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'A11', 'A12', 'A13', 'A14', 'A15', 'class']]
 	TestFile = open('test.txt', 'r')
@@ -362,7 +379,7 @@ def DecisionTree():
                                         
                                    
 	labels.append(newvals)
-	cols_test = getCols(testDataSet)
+	cols_test = mainObj.getCols(testDataSet)
 	iterTreevals = cols_test[15]
 	newvals = []
 	labels.append(cols_test[15])
@@ -392,17 +409,11 @@ def DecisionTree():
                                         
                                         curTreeVal = iterTree.val
 
-                newvals.append(curTreeVal)
-                if(curTreeVal == testDataSet[i][len(testDataSet[i])-1]):
-                        F1_test +=1
-                else:
-                        F1_test+=0
-        
+                newvals.append(curTreeVal)        
 
 	labels.append(newvals)
 
 	return labels
-labels = DecisionTree()
 
 
 
@@ -419,7 +430,7 @@ def DecisionTree(maxDepth):
 	#		labels[1] = prediected_training_labels
 	#		labels[2] = original_testing_labels
 	#		labels[3] = predicted_testing_labels
-    
-	return
-
+	tree2 = buildTreeDepth(trainDataSet, 'root', 7,1)
+	return DecisionTree()
 """
+

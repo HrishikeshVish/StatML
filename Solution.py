@@ -2,7 +2,7 @@ import math
 import copy
 from statistics import mean, mode
 import random
-import numpy as np
+
 class treeNode:
         def __init__(self, colNumber, attribs=None, children=None, value=None, cur='root'):
                 self.cur = cur

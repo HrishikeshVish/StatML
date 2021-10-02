@@ -235,9 +235,9 @@ def numToCat(trainDataSet, columns):
                         cats = []
                         curLabel = sortedpairs[0][1]
                         cats.append(sortedpairs[0][0])
-                        for k in range(1,len(sortedpairs)-2):
+                        for k in range(1,len(sortedpairs)):
                                 if(sortedpairs[k][1] !=curLabel):
-                                        cats.append(sortedpairs[k+2][0])
+                                        cats.append(sortedpairs[k][0])
                                         curLabel = sortedpairs[k][1]
                         cur = 0.0
 
@@ -265,10 +265,10 @@ def numToCat(trainDataSet, columns):
 def printTreeRecurse(tree, indent):
         
         if(tree.val !=None):
-                print(indent*'-', tree.cur, tree.attribNumber, end = '')
+                print(indent*'-', indent, tree.cur, tree.attribNumber, end = '')
                 print(tree.val)
         else:
-                print(indent*'-', tree.cur, tree.attribNumber, tree.attributes, end = '')
+                print(indent*'-', indent, tree.cur, tree.attribNumber, tree.attributes, end = '')
                 print()
                 for i in tree.attributes:
                         printTreeRecurse(tree.childNodes[i], indent+1)
@@ -305,7 +305,7 @@ def getNextNode(testRow, curRow, iterTree, iterTreevals):
                         childNode.val = responses
         return childNode
 
-def DecisionTree(maxDepth):
+def DecisionTreeBounded(maxDepth = 15):
 	#TODO: Your code starts from here. 
         #      This function should return a list of labels.
 	#      e.g.: 
@@ -418,8 +418,8 @@ def DecisionTree(maxDepth):
 
 
 
-"""
-def DecisionTree(maxDepth):
+
+def DecisionTree():
 	#TODO: Your code starts from here.
     #      This function should return a list of labels.
 	#      e.g.:
@@ -430,7 +430,7 @@ def DecisionTree(maxDepth):
 	#		labels[1] = prediected_training_labels
 	#		labels[2] = original_testing_labels
 	#		labels[3] = predicted_testing_labels
-	tree2 = buildTreeDepth(trainDataSet, 'root', 7,1)
-	return DecisionTree()
-"""
+	#tree2 = buildTreeDepth(trainDataSet, 'root', 7,1)
+	return DecisionTreeBounded(15)
+
 

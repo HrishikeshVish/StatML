@@ -51,7 +51,7 @@ def readfile(filename):
 if __name__ == '__main__':
 
     import Solution as sl
-    labels = sl.DecisionTree()
+    labels = sl.DecisionTreeBounded(4)
     if labels == None or len(labels) != 4:
         print('\nError: DecisionTree Return Value.\n')
     else:

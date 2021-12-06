@@ -40,11 +40,11 @@ class Ensemble():
         data_size = data_size//num_clf
 
         for i in range(num_clf):
-
-            sample = labeled_data.sample(frac=1, replace=True)
+            #print("Train ", i)
+            sample = labeled_data.sample(frac=0.8, replace=True)
             sample.reset_index(inplace=True, drop=True)
             classifier = Logistic()
-            classifier.train(sample, learning_rate=0.001, max_epochs=10, feature_method='bigram', reg_method='L2', lam=0.001)
+            classifier.train(sample, learning_rate=0.001, max_epochs=10, feature_method='bigram', reg_method='L2', lam=0.01)
             self.model_weights.append(classifier.weights)
             self.classifiers.append(classifier)
         return
@@ -63,44 +63,29 @@ class Ensemble():
         """
         for i in range(len(self.classifiers)):
             headers, vector, labels = self.classifiers[i].feature_extraction(data, use_language_vocab = True, method=self.classifiers[i].cur_method)
-            print(vector.shape)
-            print(np.asarray(self.classifiers[i].weights).shape)
+            #print(vector.shape)
+            #print(np.asarray(self.classifiers[i].weights).shape)
             #print(self.classifiers[i].weights)
             predictions = np.squeeze(self.classifiers[i].predict_labels(0, np.matmul(vector, self.classifiers[i].weights), True))
-            predicted_labels_i = list(predictions)
-            print(np.asarray(predicted_labels_i))
-            for j in range(len(predicted_labels)):
-                if(predicted_labels_i[j]<0.5):
-                    predicted_labels_i[j] = 0
-                else:
-                    predicted_labels_i[j] = 1
+            predicted_labels_i = np.asarray(predictions)
+            predicted_labels_i = np.where(predicted_labels_i<0.5, 0, 1)
             count = 0
-            for j in range(len(predicted_labels_i)):
-                if(predicted_labels_i[j] == data['Label'][j]):
-                    count+=1
-            print("Classifier ", i, ' Accuracy = ', count/len(data))
             predicted_labels.append(predicted_labels_i)
         predicted_labels = mode(predicted_labels, axis=0)[0][0]
-        count = 0
-        for j in range(len(predicted_labels)):
-            if(predicted_labels[j] == data['Label'][j]):
-                count +=1
-        print("Ensemble Learner Accuracy ", count/len(data))
-        print(predicted_labels)
-        exit()
+        return predicted_labels
         
-        
+"""      
 data = pd.read_csv('data.csv')
 logistic_reg = Ensemble()
 logistic_reg.train(data, num_clf=10)
 
 
 predictions = logistic_reg.predict(data)
-#count = 0
-#for i in range(len(predictions)):
-#    if(predictions[i] == data['Label'][i]):
-#        count+=1
-#print("Training Accuracy :", count/len(predictions))
-            
+count = 0
+for i in range(len(predictions)):
+    if(predictions[i] == data['Label'][i]):
+        count+=1
+print("Training Accuracy :", count/len(predictions))
+"""    
     
 

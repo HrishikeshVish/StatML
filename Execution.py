@@ -22,6 +22,12 @@ def split_dataset(all_data):
         
     It is up to you how you want to do the splitting of the data.
     """
+    
+    train_data = all_data.sample(frac=0.8)
+    train_data.reset_index(drop=True, inplace=True)
+    indexes = list(train_data.index)
+    test_data = all_data.drop(indexes)
+    test_data = test_data.reset_index(drop=True)
     return train_data, test_data
 
 """
@@ -66,13 +72,13 @@ if __name__ == '__main__':
     test_data_unseen = pd.read_csv('test_data.csv', index_col=0)
 
     logistic = Logistic()
-    logistic.train(train_data)
+    logistic.train(labeled_data=train_data, learning_rate=0.001, max_epochs=3, feature_method='bigram', reg_method='L2', lam=0.01)
     predicted_train_labels_logistic = logistic.predict(train_data)
     predicted_test_labels_logistic = logistic.predict(test_data)
     predicted_test_labels_unseen_logistic = logistic.predict(test_data_unseen)
 
     ensemble = Ensemble()
-    Ensemble.train(train_data)
+    ensemble.train(labeled_data=train_data, num_clf=5)
     predicted_train_labels_ensemble = ensemble.predict(train_data)
     predicted_test_labels_ensemble = ensemble.predict(test_data)
     predicted_test_labels_unseen_ensemble = ensemble.predict(test_data_unseen)

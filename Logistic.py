@@ -38,6 +38,7 @@ It is up to your discretion on if you want to use them or add your own methods.
 """
 import pandas as pd
 import numpy as np
+np.seterr(all = 'ignore')
 from nltk import stem, tokenize
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.tokenize import RegexpTokenizer, word_tokenize
@@ -513,7 +514,7 @@ class Logistic():
                 train_y_blocks.append(train_Y[i:i+block_size])
             lr_values = [0.001, 0.01, 0.05, 0.1]
             max_iter_values = [1, 2, 3, 5, 8, 10]
-            lam_values = [0.0001, 0.001, 0.01]
+            lam_values = [0.01, 0.5, 1, 5, 10]
             accuracy_grid = {}
             for i in lr_values:
                 accuracy_grid[i] = {}
@@ -562,14 +563,17 @@ class Logistic():
         headers, vector, labels = self.feature_extraction(data, use_language_vocab = True, method=self.cur_method)
         predictions = np.squeeze(self.predict_labels(0, np.matmul(vector, self.weights), True))
         
-        predicted_labels = list(predictions)
+        predicted_labels = np.asarray(predictions)
+        predicted_labels = np.where(predicted_labels<0.5, 0, 1)
+        """
         for i in range(len(predicted_labels)):
             if(predicted_labels[i]<0.5):
                 predicted_labels[i] = 0
             else:
                 predicted_labels[i] = 1
+        """
         return predicted_labels
-
+"""
 data = pd.read_csv('data.csv')
 train_data = data.sample(frac=0.8)
 train_data.reset_index(drop=True, inplace=True)
@@ -577,7 +581,7 @@ indexes = list(train_data.index)
 test_data = data.drop(indexes)
 test_data = test_data.reset_index(drop=True)
 logistic_reg = Logistic()
-logistic_reg.train(train_data, learning_rate=None, max_epochs=None, feature_method='bigram', reg_method='L1', lam=None)
+logistic_reg.train(train_data, learning_rate=0.001, max_epochs=10, feature_method='bigram', reg_method='L2', lam=0.01)
 predictions = logistic_reg.predict(train_data)
 count = 0
 for i in range(len(predictions)):
@@ -591,4 +595,4 @@ for i in range(len(predictions)):
     if(predictions[i] == test_data['Label'][i]):
         count+=1
 print("Testing Accuracy :", count/len(predictions))
-
+"""
